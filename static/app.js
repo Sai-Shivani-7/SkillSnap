@@ -158,38 +158,49 @@ document.addEventListener("DOMContentLoaded", () => {
         return 'en-US';
     }
 
+    function getNativeVoice(langCode) {
+        const voices = speechSynthesis.getVoices();
+        // Try to find a voice that strictly matches the language code
+        let nativeVoice = voices.find(v => v.lang === langCode || v.lang.startsWith(langCode.split('-')[0]));
+        // Fallback to any voice that contains the language name if not found
+        if (!nativeVoice) {
+            const langName = state.language.toLowerCase();
+            nativeVoice = voices.find(v => v.name.toLowerCase().includes(langName));
+        }
+        return nativeVoice;
+    }
+
     if (SpeechRecognition) {
         const topicRecognition = new SpeechRecognition();
         topicRecognition.continuous = false;
         topicRecognition.interimResults = false;
 
-        topicMicBtn.addEventListener('mousedown', (e) => {
-            e.preventDefault();
+        let isTopicRecording = false;
+        topicMicBtn.addEventListener('click', () => {
+            if (isTopicRecording) {
+                topicRecognition.stop();
+                return;
+            }
+
             topicRecognition.lang = getLangCode(state.language);
             try {
                 topicRecognition.start();
-                topicMicBtn.classList.add('recording');
-                showToast('Listening for topic...', 'info');
-            } catch(err) {}
+            } catch(err) {
+                console.error("Mic start error:", err);
+                topicRecognition.stop();
+            }
         });
 
-        topicMicBtn.addEventListener('mouseup', () => {
-            topicRecognition.stop();
-            topicMicBtn.classList.remove('recording');
-        });
-
-        topicMicBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            topicRecognition.lang = getLangCode(state.language);
-            topicRecognition.start();
+        topicRecognition.onstart = () => {
+            isTopicRecording = true;
             topicMicBtn.classList.add('recording');
-        });
+            showToast('Listening... Speak now 🎤', 'info');
+        };
 
-        topicMicBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            topicRecognition.stop();
+        topicRecognition.onend = () => {
+            isTopicRecording = false;
             topicMicBtn.classList.remove('recording');
-        });
+        };
 
         topicRecognition.onresult = (event) => {
             const transcript = event.results[0][0].transcript;
@@ -256,14 +267,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const loaderInterval = animateLoaderSteps();
 
         try {
-            const resp = await fetch('/api/generate-lesson', {
+            const resp = await fetch('/api/generate-visual', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
                 },
                 body: JSON.stringify({
-                    topic: state.topic,
+                    concept: state.topic,
                     duration: state.time,
                     language: state.language
                 })
@@ -277,13 +288,102 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            state.lessonHTML = data.lesson;
-            state.lessonText = '';
+            // Create Visual Learning UI
+            const summaryHTML = data.summary ? `<p class="lesson-summary" style="font-size: 1.1rem; line-height: 1.6;">${data.summary}</p>` : '';
+            const keyPointsHTML = data.key_points && data.key_points.length > 0 ? `
+                <div class="key-points-box mt-3" style="background: rgba(124, 58, 237, 0.1); padding: 15px; border-radius: 8px; border-left: 4px solid var(--accent-purple);">
+                    <h4 style="margin-bottom: 10px; color: var(--accent-purple);"><i class="fa-solid fa-key"></i> Key Points</h4>
+                    <ul style="margin-left: 20px; list-style-type: disc;">
+                        ${data.key_points.map(kp => `<li style="margin-bottom: 5px;">${kp}</li>`).join('')}
+                    </ul>
+                </div>
+            ` : '';
 
-            document.getElementById('lesson-title').innerText = data.topic;
-            document.getElementById('lesson-body').innerHTML = data.lesson;
-            const lbEl = document.getElementById('lesson-body');
-            state.lessonText = lbEl.innerText || lbEl.textContent;
+            let visualsHTML = '';
+            if (data.main_visual) {
+                // Pass the EXACT description to the proxy to ensure matching
+                const imgUrl = `/api/image?prompt=${encodeURIComponent(data.main_visual.visual)}&topic=${encodeURIComponent(state.topic)}`;
+                
+                visualsHTML = `
+                    <div class="main-visual-container mt-4" style="border: 1px solid var(--border-color); border-radius: 16px; padding: 20px; background: rgba(15, 23, 42, 0.4);">
+                        <h3 style="color: var(--accent-blue); text-align: center; margin-bottom: 15px;">${data.main_visual.title}</h3>
+                        <div class="visual-representation" style="background: rgba(0,0,0,0.4); border-radius: 12px; padding: 10px; text-align: center; min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); box-shadow: inset 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 20px;">
+                            <img src="${imgUrl}" alt="${data.main_visual.title}" style="width: 100%; max-height: 600px; object-fit: contain; border-radius: 8px; margin-bottom: 15px; image-rendering: -webkit-optimize-contrast;" onerror="this.src='https://via.placeholder.com/1024x1024?text=Educational+Diagram'">
+                            <div class="educational-insight" style="background: rgba(6, 182, 212, 0.05); border-left: 4px solid var(--accent-cyan); padding: 15px; border-radius: 4px; text-align: left; margin-top: 10px;">
+                                <h4 style="color: var(--accent-cyan); font-size: 0.9rem; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 1px;"><i class="fa-solid fa-microscope"></i> Detailed Analysis</h4>
+                                <p style="margin: 0; color: #e2e8f0; font-size: 1rem; line-height: 1.6; font-weight: 400;">${data.main_visual.deep_explanation || ""}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const finalHTML = `
+                ${summaryHTML}
+                ${keyPointsHTML}
+                ${visualsHTML}
+            `;
+            
+            document.getElementById('lesson-title').innerText = data.concept || state.topic;
+            document.getElementById('lesson-body').innerHTML = finalHTML;
+            state.lessonHTML = finalHTML;
+            state.concept = data.concept || state.topic; // Store the official concept
+
+            // Generate plaintext for Quiz/TTS/PDF
+            let mergedText = (data.summary || "") + "\n\n";
+            if (data.key_points && data.key_points.length > 0) mergedText += "KEY POINTS:\n" + data.key_points.join("\n- ") + "\n\n";
+            if (data.main_visual) {
+                mergedText += `TECHNICAL ANALYSIS: ${data.main_visual.title}\n${data.main_visual.deep_explanation || ""}`;
+            }
+            state.lessonText = mergedText;
+
+            // Setup Slideshow Logic (Removed since we only have one image)
+            if (data.visual_scenes && data.visual_scenes.length > 0) {
+                let currSlide = 0;
+                const totalSlides = data.visual_scenes.length;
+                let autoPlayInterval = null;
+
+                const updateSlides = () => {
+                    for(let i=0; i<totalSlides; i++) {
+                         const slide = document.getElementById('slide-'+i);
+                         if (slide) slide.style.display = i === currSlide ? 'block' : 'none';
+                    }
+                    const counter = document.getElementById('scene-counter');
+                    if (counter) counter.innerText = `${currSlide + 1} / ${totalSlides}`;
+                };
+
+                const nextSlide = () => {
+                    currSlide = (currSlide + 1) % totalSlides;
+                    updateSlides();
+                };
+
+                const prevSlide = () => {
+                    currSlide = (currSlide - 1 + totalSlides) % totalSlides;
+                    updateSlides();
+                };
+
+                document.getElementById('next-scene-btn')?.addEventListener('click', () => {
+                    if(autoPlayInterval) { clearInterval(autoPlayInterval); autoPlayInterval=null; document.getElementById('play-scenes-btn').innerHTML = '<i class="fa-solid fa-play"></i> Auto-Play Lesson'; }
+                    nextSlide();
+                });
+
+                document.getElementById('prev-scene-btn')?.addEventListener('click', () => {
+                    if(autoPlayInterval) { clearInterval(autoPlayInterval); autoPlayInterval=null; document.getElementById('play-scenes-btn').innerHTML = '<i class="fa-solid fa-play"></i> Auto-Play Lesson'; }
+                    prevSlide();
+                });
+
+                document.getElementById('play-scenes-btn')?.addEventListener('click', (e) => {
+                    if (autoPlayInterval) {
+                        clearInterval(autoPlayInterval);
+                        autoPlayInterval = null;
+                        e.target.innerHTML = '<i class="fa-solid fa-play"></i> Auto-Play Lesson';
+                    } else {
+                        nextSlide();
+                        autoPlayInterval = setInterval(nextSlide, 4000);
+                        e.target.innerHTML = '<i class="fa-solid fa-pause"></i> Pause Lesson';
+                    }
+                });
+            }
 
             const langBadge = document.getElementById('lesson-lang-badge');
             if (langBadge) langBadge.textContent = state.language;
@@ -331,7 +431,15 @@ document.addEventListener("DOMContentLoaded", () => {
         
         sentences.forEach((sentence, index) => {
             const utterance = new SpeechSynthesisUtterance(sentence.trim());
-            utterance.lang = getLangCode(state.language);
+            const langCode = getLangCode(state.language);
+            utterance.lang = langCode;
+            
+            // Set native voice to avoid English accent/slang
+            const nativeVoice = getNativeVoice(langCode);
+            if (nativeVoice) {
+                utterance.voice = nativeVoice;
+            }
+            
             utterance.rate = 0.95;
 
             if (index === sentences.length - 1) {
@@ -390,35 +498,37 @@ document.addEventListener("DOMContentLoaded", () => {
         doubtRecognition.continuous = false;
         doubtRecognition.interimResults = false;
 
-        micBtn.addEventListener('mousedown', (e) => {
-            e.preventDefault();
+        let isDoubtRecording = false;
+        micBtn.addEventListener('click', () => {
+            if (isDoubtRecording) {
+                doubtRecognition.stop();
+                return;
+            }
+
             doubtRecognition.lang = getLangCode(state.language);
             try {
                 doubtRecognition.start();
-                micBtn.classList.add('recording');
-            } catch(err) {}
+            } catch(err) {
+                console.error("Mic start error:", err);
+                doubtRecognition.stop();
+            }
         });
 
-        micBtn.addEventListener('mouseup', () => {
-            doubtRecognition.stop();
-            micBtn.classList.remove('recording');
-        });
-
-        micBtn.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            doubtRecognition.lang = getLangCode(state.language);
-            doubtRecognition.start();
+        doubtRecognition.onstart = () => {
+            isDoubtRecording = true;
             micBtn.classList.add('recording');
-        });
+            showToast('Listening for doubt...', 'info');
+        };
 
-        micBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            doubtRecognition.stop();
+        doubtRecognition.onend = () => {
+            isDoubtRecording = false;
             micBtn.classList.remove('recording');
-        });
+        };
 
         doubtRecognition.onresult = (event) => {
-            doubtInputEl.value = event.results[0][0].transcript;
+            const transcript = event.results[0][0].transcript;
+            doubtInputEl.value = transcript;
+            showToast('Doubt recorded! You can now submit.', 'success');
         };
     } else if (micBtn) {
         micBtn.style.display = 'none';
@@ -610,7 +720,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 },
                 body: JSON.stringify({
                     topic: state.topic,
-                    lessonText: state.lessonHTML
+                    lessonText: state.lessonText
                 })
             });
 
