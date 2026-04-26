@@ -861,9 +861,13 @@ def generate_visual():
         return jsonify({"error": "Groq API key not configured."}), 500
 
     data = request.json
-    concept = data.get('concept', '')
-    language = data.get('language', 'English')
-    duration = int(data.get('duration', 5))
+    print("[DEBUG] /api/generate-visual request json:", data)
+    if data is None:
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
+
+    concept = data.get('concept', '') if isinstance(data, dict) else ''
+    language = data.get('language', 'English') if isinstance(data, dict) else 'English'
+    duration = int(data.get('duration', 5)) if isinstance(data, dict) else 5
 
     if not concept:
         return jsonify({"error": "No concept provided for visual generation."}), 400
