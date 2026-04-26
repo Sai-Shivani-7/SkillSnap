@@ -7,3 +7,4 @@ reportlab
 Flask-WTF
 Flask-Limiter
 email-validator
+gunicorn
