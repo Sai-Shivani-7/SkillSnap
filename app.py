@@ -28,7 +28,7 @@ app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE='None',
 )
-CORS(app, supports_credentials=True)
+CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": ["https://skillsnap-chi.vercel.app", "https://skillsnap-chi.vercel.app/"], "allow_headers": ["Content-Type", "X-CSRFToken", "Authorization", "Accept"], "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"]}})
 
 # Initialize CSRF Protection (disabled for API-first demo)
 csrf = CSRFProtect(app)
