@@ -3,6 +3,9 @@
    ============================================================ */
 
 document.addEventListener("DOMContentLoaded", () => {
+    // Ensure API_URL is defined
+    window.API_URL = window.API_URL || '';
+
 
     // ==================== STATE ====================
     let state = {
@@ -316,11 +319,21 @@ document.addEventListener("DOMContentLoaded", () => {
         const selectedLabel = memoryBoost.selected_style || MEMORY_STYLE_LABELS[memoryBoost.selected_style_key] || 'Story Hook';
         const suggestedLabel = memoryBoost.suggested_style || 'Story Hook';
 
-        document.getElementById('memory-title').textContent = memoryBoost.mnemonic_title || 'Memory Hook';
-        document.getElementById('memory-text').textContent = memoryBoost.mnemonic_text || 'No mnemonic available yet.';
-        document.getElementById('memory-why').textContent = memoryBoost.why_it_works || '';
-        document.getElementById('memory-selected-style').textContent = selectedLabel;
-        document.getElementById('memory-suggested-style').textContent = `Recommended: ${suggestedLabel}`;
+        const titleEl = document.getElementById('memory-title');
+        if (titleEl) titleEl.textContent = memoryBoost.mnemonic_title || 'Memory Hook';
+        
+        const textEl = document.getElementById('memory-text');
+        if (textEl) textEl.textContent = memoryBoost.mnemonic_text || 'No mnemonic available yet.';
+        
+        const whyEl = document.getElementById('memory-why');
+        if (whyEl) whyEl.textContent = memoryBoost.why_it_works || '';
+        
+        const selStyleEl = document.getElementById('memory-selected-style');
+        if (selStyleEl) selStyleEl.textContent = selectedLabel;
+        
+        const sugStyleEl = document.getElementById('memory-suggested-style');
+        if (sugStyleEl) sugStyleEl.textContent = `Recommended: ${suggestedLabel}`;
+        
         setActiveMemoryStyle(memoryBoost.selected_style_key || styleKeyFromLabel(selectedLabel));
     }
 
@@ -373,6 +386,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     topic: state.topic,
                     lesson_text: state.lessonText,
@@ -419,6 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     topic: state.topic,
                     lesson_text: state.lessonText,
@@ -455,7 +470,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         let visualsHTML = '';
         if (data.main_visual) {
-            const imgUrl = `/api/image?prompt=${encodeURIComponent(data.main_visual.visual)}&topic=${encodeURIComponent(data.concept || state.topic)}`;
+            const imgUrl = (window.API_URL || '') + `/api/image?prompt=${encodeURIComponent(data.main_visual.visual)}&topic=${encodeURIComponent(data.concept || state.topic)}`;
             const fallbackImageUrl = getImageFallbackDataUrl(data.main_visual.title || 'Educational Diagram');
             const flowchartMarkup = data.main_visual.svg
                 ? `<div class="diagram-stage" style="width: 100%; max-width: 100%; border-radius: 12px; overflow: hidden; background: linear-gradient(180deg, rgba(15, 23, 42, 0.9), rgba(15, 23, 42, 0.7)); margin-bottom: 18px;">${data.main_visual.svg}</div>`
@@ -658,6 +673,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch(window.API_URL + '/api/generate-visual', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
@@ -668,8 +684,18 @@ document.addEventListener("DOMContentLoaded", () => {
                     language: state.language
                 })
             });
-            const data = await resp.json();
+            const rawResponse = await resp.text();
             clearInterval(loaderInterval);
+
+            let data;
+            try {
+                data = JSON.parse(rawResponse);
+            } catch (parseErr) {
+                console.error('API response parse error:', parseErr, rawResponse);
+                showToast('Server returned invalid JSON from backend. Check backend logs.', 'error');
+                switchView('home-view');
+                return;
+            }
 
             if (data.error) {
                 showToast(data.error, 'error');
@@ -820,6 +846,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch(window.API_URL + '/api/clarify-doubt', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
@@ -895,6 +922,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch(window.API_URL + '/api/generate-quiz', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
@@ -985,6 +1013,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch(window.API_URL + '/api/evaluate', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
@@ -1053,6 +1082,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch(window.API_URL + '/api/simplify', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
@@ -1076,6 +1106,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const resp = await fetch(window.API_URL + '/api/download-pdf', {
                 method: 'POST',
+                credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
@@ -1120,6 +1151,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     'Content-Type': 'application/json',
                     'X-CSRFToken': state.csrfToken
                 },
+                credentials: 'include',
                 body: JSON.stringify({
                     topic: state.topic,
                     lesson_text: state.lessonText,

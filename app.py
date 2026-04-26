@@ -24,6 +24,10 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super-secret-skillsnap-key-123")
 app.config['WTF_CSRF_ENABLED'] = False
+app.config.update(
+    SESSION_COOKIE_SECURE=True,
+    SESSION_COOKIE_SAMESITE='None',
+)
 CORS(app, supports_credentials=True)
 
 # Initialize CSRF Protection (disabled for API-first demo)
@@ -516,6 +520,16 @@ def handle_exception(error):
     if request.path.startswith('/api/'):
         return jsonify({"error": "Internal Server Error", "message": str(error)}), 500
     return error
+
+@app.after_request
+def enforce_api_json_response(response):
+    if request.path.startswith('/api/') and response.content_type and response.content_type.startswith('text/html'):
+        try:
+            raw = response.get_data(as_text=True)
+            return jsonify({"error": "API returned HTML response", "details": raw}), response.status_code
+        except Exception:
+            pass
+    return response
 
 
 @app.route('/api/csrf-token', methods=['GET'])
