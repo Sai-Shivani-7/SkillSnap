@@ -3,7 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let csrfToken = '';
     
     // Fetch and store CSRF token on page load
-    fetch('/api/csrf-token')
+    fetch(window.API_URL + '/api/csrf-token')
         .then(res => res.json())
         .then(data => {
             csrfToken = data.csrf_token;
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
-            const res = await fetch('/api/login', {
+            const res = await fetch(window.API_URL + '/api/login', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
-            const res = await fetch('/api/register', {
+            const res = await fetch(window.API_URL + '/api/register', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',

@@ -25,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // ==================== CSRF TOKEN INITIALIZATION ====================
     // Fetch and store CSRF token on page load for all AJAX requests
-    fetch('/api/csrf-token')
+    fetch(window.API_URL + '/api/csrf-token')
         .then(res => res.json())
         .then(data => {
             state.csrfToken = data.csrf_token;
@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.getElementById('logout-btn')?.addEventListener('click', async () => {
         try {
-            await fetch('/api/logout', { 
+            await fetch(window.API_URL + '/api/logout', { 
                 method: 'POST',
                 headers: {
                     'X-CSRFToken': state.csrfToken
@@ -370,7 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
         loadingEl?.classList.remove('hidden');
 
         try {
-            const resp = await fetch('/api/generate-flashcards', {
+            const resp = await fetch(window.API_URL + '/api/generate-flashcards', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -416,7 +416,7 @@ document.addEventListener("DOMContentLoaded", () => {
         setActiveMemoryStyle(styleKey);
 
         try {
-            const resp = await fetch('/api/generate-mnemonic', {
+            const resp = await fetch(window.API_URL + '/api/generate-mnemonic', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -659,7 +659,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const loaderInterval = animateLoaderSteps();
 
         try {
-            const resp = await fetch('/api/generate-visual', {
+            const resp = await fetch(window.API_URL + '/api/generate-visual', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -821,7 +821,7 @@ document.addEventListener("DOMContentLoaded", () => {
         answerDiv.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Thinking...';
 
         try {
-            const resp = await fetch('/api/clarify-doubt', {
+            const resp = await fetch(window.API_URL + '/api/clarify-doubt', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -896,7 +896,7 @@ document.addEventListener("DOMContentLoaded", () => {
         switchView('quiz-loading-view');
 
         try {
-            const resp = await fetch('/api/generate-quiz', {
+            const resp = await fetch(window.API_URL + '/api/generate-quiz', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -986,7 +986,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.disabled = true;
 
         try {
-            const resp = await fetch('/api/evaluate', {
+            const resp = await fetch(window.API_URL + '/api/evaluate', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -1054,7 +1054,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     async function fetchSimplification(el) {
         try {
-            const resp = await fetch('/api/simplify', {
+            const resp = await fetch(window.API_URL + '/api/simplify', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -1077,7 +1077,7 @@ document.addEventListener("DOMContentLoaded", () => {
         btn.disabled = true;
 
         try {
-            const resp = await fetch('/api/download-pdf', {
+            const resp = await fetch(window.API_URL + '/api/download-pdf', {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
@@ -1117,7 +1117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById('revision-content')?.classList.add('hidden');
 
         try {
-            const resp = await fetch('/api/adaptive-revision', {
+            const resp = await fetch(window.API_URL + '/api/adaptive-revision', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -1143,7 +1143,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==================== STUDENT DASHBOARD ====================
     async function loadDashboard() {
         try {
-            const resp = await fetch('/api/dashboard');
+            const resp = await fetch(window.API_URL + '/api/dashboard');
             const data = await resp.json();
 
             animateCounter(document.getElementById('total-time'), data.total_time_mins || 0);
