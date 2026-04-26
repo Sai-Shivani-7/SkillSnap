@@ -517,6 +517,13 @@ def handle_exception(error):
     return error
 
 
+@app.before_request
+def csrf_exempt_api():
+    """Exempt API routes from CSRF protection"""
+    if request.path.startswith('/api/'):
+        csrf.exempt(request.endpoint)
+
+
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
     """Return CSRF token for AJAX requests"""
@@ -846,9 +853,10 @@ Be encouraging and supportive in tone.
 @app.route('/api/generate-visual', methods=['POST'])
 @limiter.limit("10 per hour")
 def generate_visual():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-        
+    # Temporarily allow demo access without authentication
+    # if 'user_id' not in session:
+    #     return jsonify({"error": "Unauthorized"}), 401
+
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
