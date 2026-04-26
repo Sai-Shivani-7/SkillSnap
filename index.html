@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkillSnap AI — Micro-Learning Powered by AI</title>
+    <meta name="description" content="Turn small time gaps into meaningful learning with AI-powered micro-lessons, quizzes, and personalized feedback.">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="static/style.css">
+</head>
+<body>
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar">
+            <div class="logo">
+                <div class="logo-icon"><i class="fa-solid fa-bolt"></i></div>
+                <span>Skill<span class="text-gradient">Snap</span> <span class="logo-ai">AI</span></span>
+            </div>
+            <ul class="nav-links" id="nav-links">
+                <li class="active" data-view="home-view" id="nav-home">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </li>
+                <li data-view="dashboard-view" id="nav-dashboard">
+                    <i class="fa-solid fa-chart-pie"></i>
+                    <span>My Progress</span>
+                </li>
+            </ul>
+            <div class="sidebar-footer">
+                <div class="user-badge" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="user-avatar"><i class="fa-solid fa-user-graduate"></i></div>
+                        <div class="user-info">
+                            <span class="user-name">Solo Learner</span>
+                            <span class="user-role">Learner</span>
+                        </div>
+                    </div>
+                    <button class="icon-btn logout-btn" id="logout-btn" title="Logout" style="color: var(--accent-red); font-size: 1.2rem;">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+
+            <!-- ===================== HOME VIEW ===================== -->
+            <section id="home-view" class="view-section active">
+                <div class="hero-header">
+                    <div class="hero-badge"><i class="fa-solid fa-sparkles"></i> AI-Powered Learning</div>
+                    <h1>Ready to snap into<br><span class="text-gradient-anim">learning?</span></h1>
+                    <p>Turn small time gaps into meaningful knowledge. AI generates your personalized lesson in seconds.</p>
+                </div>
+
+                <div class="setup-card glass-panel">
+                    <!-- Step 1: Time -->
+                    <div class="setup-step">
+                        <div class="step-label"><span class="step-num">1</span> How much time do you have?</div>
+                        <div class="time-selector">
+                            <button class="time-btn active" data-time="5" id="time-5">
+                                <i class="fa-regular fa-clock"></i>
+                                <span class="time-value">5</span>
+                                <span class="time-unit">min</span>
+                            </button>
+                            <button class="time-btn" data-time="10" id="time-10">
+                                <i class="fa-regular fa-clock"></i>
+                                <span class="time-value">10</span>
+                                <span class="time-unit">min</span>
+                            </button>
+                            <button class="time-btn" data-time="15" id="time-15">
+                                <i class="fa-regular fa-clock"></i>
+                                <span class="time-value">15</span>
+                                <span class="time-unit">min</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Topic -->
+                    <div class="setup-step">
+                        <div class="step-label"><span class="step-num">2</span> What do you want to learn?</div>
+                        <div class="topic-input-group">
+                            <i class="fa-solid fa-magnifying-glass input-icon"></i>
+                            <input type="text" id="topic-input" placeholder="e.g., Quantum Physics, React Hooks, French Revolution..." autocomplete="off">
+                            <button type="button" id="topic-mic-btn" class="mic-input-btn" title="Voice input">
+                                <i class="fa-solid fa-microphone"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Language -->
+                    <div class="setup-step">
+                        <div class="step-label"><span class="step-num">3</span> Preferred Language</div>
+                        <div class="lang-selector">
+                            <button class="lang-btn active" data-lang="English">🇬🇧 English</button>
+                            <button class="lang-btn" data-lang="Hindi">🇮🇳 Hindi</button>
+                            <button class="lang-btn" data-lang="Telugu">🏛️ Telugu</button>
+                            <button class="lang-btn" data-lang="Spanish">🇪🇸 Spanish</button>
+                        </div>
+                    </div>
+
+                    <button id="generate-btn" class="primary-btn generate-btn">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        Generate My Lesson
+                        <span class="btn-arrow"><i class="fa-solid fa-arrow-right"></i></span>
+                    </button>
+                </div>
+
+                <!-- Quick Info Cards -->
+                <div class="info-cards">
+                    <div class="info-card">
+                        <i class="fa-solid fa-brain"></i>
+                        <span>AI-Powered Explanations</span>
+                    </div>
+                    <div class="info-card">
+                        <i class="fa-solid fa-microphone"></i>
+                        <span>Voice Input & TTS</span>
+                    </div>
+                    <div class="info-card">
+                        <i class="fa-solid fa-globe"></i>
+                        <span>4 Languages Supported</span>
+                    </div>
+                    <div class="info-card">
+                        <i class="fa-solid fa-chart-line"></i>
+                        <span>Progress Tracking</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===================== LOADING VIEW ===================== -->
+            <section id="loading-view" class="view-section hidden">
+                <div class="loader-container">
+                    <div class="ai-loader">
+                        <div class="loader-ring"></div>
+                        <div class="loader-core"><i class="fa-solid fa-brain"></i></div>
+                    </div>
+                    <h2 class="loader-title">Crafting your lesson<span class="dot-anim">...</span></h2>
+                    <p class="loader-sub">Our AI is distilling complex knowledge into bite-sized clarity.</p>
+                    <div class="loader-steps">
+                        <div class="loader-step active" id="ls-1"><i class="fa-solid fa-check"></i> Analyzing topic</div>
+                        <div class="loader-step" id="ls-2"><i class="fa-solid fa-spinner fa-spin"></i> Generating explanation</div>
+                        <div class="loader-step" id="ls-3"><i class="fa-regular fa-circle"></i> Preparing examples</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===================== LEARNING VIEW ===================== -->
+            <section id="learning-view" class="view-section hidden">
+                <div class="lesson-header">
+                    <button class="back-btn" id="lesson-back-btn">
+                        <i class="fa-solid fa-arrow-left"></i> Back
+                    </button>
+                    <div class="lesson-meta">
+                        <h2 id="lesson-title">Topic Title</h2>
+                        <span class="lesson-lang-badge" id="lesson-lang-badge">English</span>
+                        <span class="lesson-duration-badge" id="lesson-duration-badge">5 Mins</span>
+                    </div>
+                    <div class="lesson-actions">
+                        <button id="tts-btn" class="icon-btn tts-btn" title="Listen to Lesson">
+                            <i class="fa-solid fa-volume-high"></i>
+                            <span>Listen</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="lesson-content glass-panel" id="lesson-body">
+                    <!-- Dynamic HTML injected here -->
+                </div>
+
+                <div class="memory-boost glass-panel mt-4" id="memory-boost-section">
+                    <div class="memory-header">
+                        <div>
+                            <h3><i class="fa-solid fa-sparkles text-accent"></i> Memory Boost</h3>
+                            <p>Keep the idea sticky with an AI-generated mnemonic.</p>
+                        </div>
+                        <button type="button" id="toggle-memory-styles-btn" class="primary-btn outline memory-toggle-btn">
+                            Change memory style
+                        </button>
+                    </div>
+
+                    <div class="memory-style-picker hidden" id="memory-style-picker">
+                        <button type="button" class="memory-style-btn active" data-style="story">🎭 Story Hook</button>
+                        <button type="button" class="memory-style-btn" data-style="acronym">🔤 Acronyms</button>
+                        <button type="button" class="memory-style-btn" data-style="rhyme">🎵 Rhymes</button>
+                        <button type="button" class="memory-style-btn" data-style="funny">😂 Funny Associations</button>
+                    </div>
+
+                    <div class="memory-meta">
+                        <span class="memory-chip" id="memory-selected-style">Story Hook</span>
+                        <span class="memory-chip recommended" id="memory-suggested-style">Recommended: Story Hook</span>
+                    </div>
+
+                    <div class="memory-card" id="memory-card">
+                        <div class="memory-loading hidden" id="memory-loading">
+                            <i class="fa-solid fa-spinner fa-spin"></i> Building your mnemonic...</div>
+                        <div id="memory-text" class="memory-text"></div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- ===================== DASHBOARD VIEW ===================== -->
+            <section id="dashboard-view" class="view-section hidden">
+                <div class="dashboard-header glass-panel">
+                    <div>
+                        <h2>My Progress</h2>
+                        <p>Review your recent lessons, accuracy trends, and skill streaks.</p>
+                    </div>
+                    <div class="dashboard-actions">
+                        <button class="icon-btn" title="Refresh data"><i class="fa-solid fa-arrows-rotate"></i></button>
+                        <button class="icon-btn" title="Export progress"><i class="fa-solid fa-file-export"></i></button>
+                    </div>
+                </div>
+
+                <div class="stats-grid mt-4">
+                    <div class="glass-panel stat-card">
+                        <span class="stat-title">Total Lessons</span>
+                        <span class="stat-value" id="total-lessons">0</span>
+                    </div>
+                    <div class="glass-panel stat-card">
+                        <span class="stat-title">Avg Session</span>
+                        <span class="stat-value" id="avg-session">0 min</span>
+                    </div>
+                    <div class="glass-panel stat-card">
+                        <span class="stat-title">Your Streak</span>
+                        <span class="stat-value" id="streak-count">0 days</span>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid mt-4">
+                    <div class="glass-panel chart-container">
+                        <div class="chart-header">
+                            <h3><i class="fa-solid fa-chart-line text-accent"></i> Quiz Accuracy Trend</h3>
+                        </div>
+                        <canvas id="accuracyChart"></canvas>
+                    </div>
+                    <div class="glass-panel topics-panel">
+                        <h3><i class="fa-solid fa-triangle-exclamation text-orange"></i> Weak Areas</h3>
+                        <ul id="weak-topics-list" class="topic-list weak-list">
+                            <!-- Populated via JS -->
+                        </ul>
+                        <h3 class="mt-4"><i class="fa-solid fa-check-circle text-green"></i> Recently Learned</h3>
+                        <ul id="recent-topics-list" class="topic-list recent-list">
+                            <!-- Populated via JS -->
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="glass-panel lesson-history-panel mt-4">
+                    <div class="history-header">
+                        <div>
+                            <h3><i class="fa-solid fa-book-open text-accent"></i> Lesson History</h3>
+                            <p>Reopen lessons, revisit revision sprints, and continue where you left off.</p>
+                        </div>
+                    </div>
+                    <div id="lesson-history-list" class="lesson-history-list">
+                        <!-- Populated via JS -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="static/app.js"></script>
+</body>
+</html>
