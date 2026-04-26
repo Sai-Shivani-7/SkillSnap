@@ -114,17 +114,14 @@ document.addEventListener("DOMContentLoaded", () => {
         switchView('dashboard-view');
     });
 
-    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+    document.getElementById('logout-btn')?.addEventListener('click', () => {
         try {
-            await fetch(window.API_URL + '/api/logout', { 
-                method: 'POST',
-                headers: {
-                    'X-CSRFToken': state.csrfToken
-                }
-            });
-            window.location.href = '/';
+            localStorage.removeItem('user');
+            sessionStorage.clear();
+            window.location.reload();
         } catch (e) {
             console.error('Logout failed', e);
+            window.location.reload();
         }
     });
 

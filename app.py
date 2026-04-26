@@ -23,9 +23,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super-secret-skillsnap-key-123")
+app.config['WTF_CSRF_ENABLED'] = False
 CORS(app, supports_credentials=True)
 
-# Initialize CSRF Protection
+# Initialize CSRF Protection (disabled for API-first demo)
 csrf = CSRFProtect(app)
 
 # Initialize Rate Limiter
@@ -517,13 +518,6 @@ def handle_exception(error):
     return error
 
 
-@app.before_request
-def csrf_exempt_api():
-    """Exempt API routes from CSRF protection"""
-    if request.path.startswith('/api/'):
-        csrf.exempt(request.endpoint)
-
-
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
     """Return CSRF token for AJAX requests"""
@@ -663,8 +657,10 @@ Do NOT wrap in markdown. Do NOT use code blocks. Output only HTML as described a
                 lesson_content = lesson_content[4:]
             lesson_content = lesson_content.strip()
 
-        # Log session to db and update streak
-        database.log_session(user_id=session['user_id'], topic=topic, duration=duration, explanation=lesson_content)
+        # Log session to db and update streak if the user session exists
+        user_id = session.get('user_id')
+        if user_id:
+            database.log_session(user_id=user_id, topic=topic, duration=duration, explanation=lesson_content)
 
         return jsonify({"lesson": lesson_content, "topic": topic})
     except Exception as e:
@@ -674,13 +670,12 @@ Do NOT wrap in markdown. Do NOT use code blocks. Output only HTML as described a
 @app.route('/api/generate-quiz', methods=['POST'])
 @limiter.limit("10 per hour")
 def generate_quiz():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-        
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     text = data.get('text', '')
     topic = data.get('topic', '')
 
@@ -740,10 +735,9 @@ Lesson Text:
 @app.route('/api/evaluate', methods=['POST'])
 @limiter.limit("20 per hour")
 def evaluate():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-        
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     results = data.get('results', [])
     topic = data.get('topic', 'Unknown')
 
@@ -755,7 +749,9 @@ def evaluate():
 
     accuracy = (score / max_score) * 100 if max_score > 0 else 0
 
-    database.log_quiz_score(user_id=session['user_id'], topic=topic, score=score, max_score=max_score, accuracy=accuracy)
+    user_id = session.get('user_id')
+    if user_id:
+        database.log_quiz_score(user_id=user_id, topic=topic, score=score, max_score=max_score, accuracy=accuracy)
 
     requires_simplification = False
 
@@ -782,13 +778,12 @@ def evaluate():
 @app.route('/api/clarify-doubt', methods=['POST'])
 @limiter.limit("20 per hour")
 def clarify_doubt():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-        
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     doubt = data.get('doubt', '')
     topic = data.get('topic', '')
     language = data.get('language', 'English')
@@ -817,13 +812,12 @@ Keep it to 2-3 short paragraphs. Be warm, encouraging, and clear.
 @limiter.limit("10 per hour")
 def simplify():
     """Generate a simpler re-explanation when the student scores poorly."""
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-        
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     topic = data.get('topic', '')
     language = data.get('language', 'English')
 
@@ -860,9 +854,9 @@ def generate_visual():
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
-    data = request.json
+    data = request.get_json(silent=True)
     print("[DEBUG] /api/generate-visual request json:", data)
-    if data is None:
+    if not isinstance(data, dict):
         return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
 
     concept = data.get('concept', '') if isinstance(data, dict) else ''
@@ -968,13 +962,15 @@ Guidelines:
         if isinstance(visual_json.get("memory_boost"), dict):
             visual_json["memory_boost"]["selected_style"] = "Story Hook"
             visual_json["memory_boost"]["selected_style_key"] = "story"
-        database.log_session(
-            user_id=session['user_id'],
-            topic=concept,
-            duration=duration,
-            explanation=json.dumps(visual_json, ensure_ascii=False),
-            session_type='lesson'
-        )
+        user_id = session.get('user_id')
+        if user_id:
+            database.log_session(
+                user_id=user_id,
+                topic=concept,
+                duration=duration,
+                explanation=json.dumps(visual_json, ensure_ascii=False),
+                session_type='lesson'
+            )
         return jsonify(visual_json)
     except json.JSONDecodeError:
         return jsonify({"error": "Model returned invalid JSON. Please try again."}), 500
@@ -985,13 +981,12 @@ Guidelines:
 @app.route('/api/generate-mnemonic', methods=['POST'])
 @limiter.limit("20 per hour")
 def generate_mnemonic():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     topic = data.get('topic', '').strip()
     lesson_text = data.get('lesson_text', '').strip()
     language = data.get('language', 'English')
@@ -1012,13 +1007,12 @@ def generate_mnemonic():
 @app.route('/api/generate-flashcards', methods=['POST'])
 @limiter.limit("20 per hour")
 def generate_flashcards():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     topic = data.get('topic', '').strip()
     lesson_text = data.get('lesson_text', '').strip()
     language = data.get('language', 'English')
@@ -1038,13 +1032,12 @@ def generate_flashcards():
 @app.route('/api/adaptive-revision', methods=['POST'])
 @limiter.limit("10 per hour")
 def adaptive_revision():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
 
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     topic = data.get('topic', '').strip()
     lesson_text = data.get('lesson_text', '').strip()
     language = data.get('language', 'English')
@@ -1055,14 +1048,16 @@ def adaptive_revision():
 
     try:
         revision_json = build_adaptive_revision(topic, lesson_text, language, results)
-        database.log_session(
-            user_id=session['user_id'],
-            topic=f"{topic} Revision Sprint",
-            duration=5,
-            explanation=json.dumps(revision_json, ensure_ascii=False),
-            session_type='revision',
-            parent_topic=topic
-        )
+        user_id = session.get('user_id')
+        if user_id:
+            database.log_session(
+                user_id=user_id,
+                topic=f"{topic} Revision Sprint",
+                duration=5,
+                explanation=json.dumps(revision_json, ensure_ascii=False),
+                session_type='revision',
+                parent_topic=topic
+            )
         return jsonify(revision_json)
     except json.JSONDecodeError:
         return jsonify({"error": "Model returned invalid revision JSON. Please try again."}), 500
@@ -1154,21 +1149,28 @@ def proxy_image():
 
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({
+            "total_lessons": 0,
+            "avg_session_length": "0 min",
+            "streak_days": 0,
+            "recent_lessons": [],
+            "weak_areas": [],
+            "progress_graph": []
+        })
         
-    stats = database.get_dashboard_stats(user_id=session['user_id'])
-    stats["recent_lessons"] = database.get_recent_lessons(user_id=session['user_id'])
+    stats = database.get_dashboard_stats(user_id=user_id)
+    stats["recent_lessons"] = database.get_recent_lessons(user_id=user_id)
     return jsonify(stats)
 
 
 @app.route('/api/download-pdf', methods=['POST'])
 @limiter.limit("50 per day")
 def download_pdf():
-    if 'user_id' not in session:
-        return jsonify({"error": "Unauthorized"}), 401
-        
-    data = request.json
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "Invalid JSON payload. Make sure the request body is JSON."}), 400
     topic = data.get('topic', 'Lesson')
     html_content = data.get('lessonText', '')
 
