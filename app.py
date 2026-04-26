@@ -485,6 +485,38 @@ Rules:
     return json.loads(raw)
 
 
+# ==================== ERROR HANDLERS ====================
+@app.errorhandler(400)
+def bad_request(error):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Bad Request", "message": str(error)}), 400
+    return error
+
+@app.errorhandler(401)
+def unauthorized(error):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Unauthorized", "message": str(error)}), 401
+    return error
+
+@app.errorhandler(404)
+def not_found(error):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Not Found", "message": str(error)}), 404
+    return error
+
+@app.errorhandler(500)
+def internal_error(error):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Internal Server Error", "message": str(error)}), 500
+    return error
+
+@app.errorhandler(Exception)
+def handle_exception(error):
+    if request.path.startswith('/api/'):
+        return jsonify({"error": "Internal Server Error", "message": str(error)}), 500
+    return error
+
+
 @app.route('/api/csrf-token', methods=['GET'])
 def get_csrf_token():
     """Return CSRF token for AJAX requests"""
