@@ -68,7 +68,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Success, go to main app
+            // Success, store user ID for fallback and go to main app
+            localStorage.setItem('skillsnap_user_id', data.user_id);
             window.location.href = 'index.html';
 
         } catch (error) {
@@ -108,7 +109,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            // Success, go to main app
+            // Success, store user ID for fallback and go to main app
+            localStorage.setItem('skillsnap_user_id', data.user_id);
             window.location.href = 'index.html';
 
         } catch (error) {

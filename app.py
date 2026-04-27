@@ -24,11 +24,20 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SECRET_KEY", "super-secret-skillsnap-key-123")
 app.config['WTF_CSRF_ENABLED'] = False
+# Session configuration for cross-origin support (Vercel -> Render)
 app.config.update(
     SESSION_COOKIE_SECURE=True,
     SESSION_COOKIE_SAMESITE='None',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_PERMANENT=True,
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7)
 )
-CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": ["https://skillsnap-chi.vercel.app", "https://skillsnap-chi.vercel.app/"], "allow_headers": ["Content-Type", "X-CSRFToken", "Authorization", "Accept"], "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"]}})
+
+# Relax security for local development
+if os.getenv("FLASK_ENV") == "development" or os.getenv("RENDER") is None:
+    app.config['SESSION_COOKIE_SECURE'] = False
+    app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+CORS(app, supports_credentials=True, resources={r"/api/*": {"origins": ["https://skillsnap-chi.vercel.app", "https://skillsnap-chi.vercel.app/", "http://localhost:3000", "http://127.0.0.1:5500"], "allow_headers": ["Content-Type", "X-CSRFToken", "Authorization", "Accept", "X-User-ID"], "methods": ["GET", "POST", "OPTIONS", "PUT", "DELETE"]}})
 
 # Initialize CSRF Protection (disabled for API-first demo)
 csrf = CSRFProtect(app)
@@ -1168,8 +1177,10 @@ def proxy_image():
 
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard():
-    user_id = session.get('user_id')
-    if not user_id:
+    # Fallback to header if session cookie is blocked (common in cross-origin Vercel -> Render)
+    user_id = session.get('user_id') or request.headers.get('X-User-ID')
+    
+    if not user_id or user_id == "undefined" or user_id == "null":
         return jsonify({
             "logged_in": False,
             "total_time_mins": 0,

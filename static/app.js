@@ -1164,7 +1164,10 @@ document.addEventListener("DOMContentLoaded", () => {
     async function loadDashboard() {
         try {
             const resp = await fetch(window.API_URL + '/api/dashboard', {
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
+                }
             });
             const data = await resp.json();
 
@@ -1288,9 +1291,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 credentials: 'include',
                 headers: {
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 }
             });
+            localStorage.removeItem('skillsnap_user_id');
             if (resp.ok) {
                 showToast('Logged out successfully', 'success');
                 setTimeout(() => {
@@ -1299,6 +1304,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } catch (err) {
             console.error('Logout failed:', err);
+            localStorage.removeItem('skillsnap_user_id');
             window.location.href = 'landing.html';
         }
     });
