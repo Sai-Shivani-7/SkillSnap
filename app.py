@@ -54,6 +54,10 @@ limiter = Limiter(
 # Initialize database
 database.init_db()
 
+# Helper to get user ID from session or header fallback
+def get_current_user_id():
+    return session.get('user_id') or request.headers.get('X-User-ID')
+
 # ==================== ENV VALIDATION ====================
 def validate_environment():
     """Validate required environment variables on startup."""
@@ -613,7 +617,8 @@ def logout():
 @app.route('/api/generate-lesson', methods=['POST'])
 @limiter.limit("10 per hour")
 def generate_lesson():
-    if 'user_id' not in session:
+    user_id = get_current_user_id()
+    if not user_id:
         return jsonify({"error": "Unauthorized"}), 401
     
     if not client:
@@ -775,7 +780,7 @@ def evaluate():
 
     accuracy = (score / max_score) * 100 if max_score > 0 else 0
 
-    user_id = session.get('user_id')
+    user_id = get_current_user_id()
     if user_id:
         database.log_quiz_score(user_id=user_id, topic=topic, score=score, max_score=max_score, accuracy=accuracy)
 
@@ -876,9 +881,9 @@ def generate_visual():
     if request.method == 'OPTIONS':
         return jsonify({"message": "OK"}), 200
 
-    # Temporarily allow demo access without authentication
-    # if 'user_id' not in session:
-    #     return jsonify({"error": "Unauthorized"}), 401
+    user_id = get_current_user_id()
+    if not user_id:
+        return jsonify({"error": "Please sign in to generate lessons."}), 401
 
     if not client:
         return jsonify({"error": "Groq API key not configured."}), 500
@@ -1179,7 +1184,7 @@ def proxy_image():
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard():
     # Fallback to header if session cookie is blocked (common in cross-origin Vercel -> Render)
-    user_id = session.get('user_id') or request.headers.get('X-User-ID')
+    user_id = get_current_user_id()
     
     if not user_id or user_id == "undefined" or user_id == "null":
         return jsonify({
