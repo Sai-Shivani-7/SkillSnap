@@ -526,7 +526,9 @@ def enforce_api_json_response(response):
     if request.path.startswith('/api/') and response.content_type and response.content_type.startswith('text/html'):
         try:
             raw = response.get_data(as_text=True)
-            return jsonify({"error": "API returned HTML response", "details": raw}), response.status_code
+            new_resp = jsonify({"error": "API returned HTML response", "details": raw})
+            new_resp.status_code = response.status_code
+            return new_resp
         except Exception:
             pass
     return response
@@ -858,9 +860,12 @@ Be encouraging and supportive in tone.
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/generate-visual', methods=['POST'])
+@app.route('/api/generate-visual', methods=['POST', 'OPTIONS'])
 @limiter.limit("10 per hour")
 def generate_visual():
+    if request.method == 'OPTIONS':
+        return jsonify({"message": "OK"}), 200
+
     # Temporarily allow demo access without authentication
     # if 'user_id' not in session:
     #     return jsonify({"error": "Unauthorized"}), 401
