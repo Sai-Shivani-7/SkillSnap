@@ -1,6 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <script>
+        // Synchronous Auth Check - Stop 'Solo Learner' flash
+        if (!localStorage.getItem('skillsnap_user_id')) {
+            window.location.href = 'landing.html';
+        }
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkillSnap AI — Micro-Learning Powered by AI</title>

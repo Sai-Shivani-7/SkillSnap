@@ -115,14 +115,17 @@ def update_streak(user_id):
 def log_session(user_id, topic, duration, explanation, session_type='lesson', parent_topic=None):
     """Logs a learning session to MongoDB."""
     sessions = get_collection('sessions')
+    # Ensure user_id is a clean string to avoid mismatch between ObjectId and string
+    clean_uid = str(user_id).strip()
+    
     session = {
-        "user_id": str(user_id),
+        "user_id": clean_uid,
         "topic": topic,
         "duration": duration,
         "explanation": explanation,
         "session_type": session_type,
         "parent_topic": parent_topic,
-        "timestamp": datetime.now()
+        "timestamp": datetime.utcnow()
     }
     sessions.insert_one(session)
     # Give them credit for the streak/concept
@@ -158,8 +161,12 @@ def get_dashboard_stats(user_id):
             "weak_topics": [], "chart_data": [], "streak_days": 0, "concepts_learned": 0
         }
 
-    str_uid = str(user_id)
-
+    # Flexible ID lookup
+    str_uid = str(user_id).strip()
+    
+    # Log for debugging
+    print(f"DEBUG: Fetching stats for user_id: {str_uid}")
+    
     # Session stats
     total_time = sum(s.get('duration', 0) for s in sessions.find({"user_id": str_uid}))
     
@@ -206,7 +213,7 @@ def get_dashboard_stats(user_id):
 def get_recent_lessons(user_id, limit=8):
     """Return recent lessons/revisions for the user."""
     sessions = get_collection('sessions')
-    str_uid = str(user_id)
+    str_uid = str(user_id).strip()
     recent_sessions = list(
         sessions.find({"user_id": str_uid})
         .sort("timestamp", -1)
