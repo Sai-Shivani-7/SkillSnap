@@ -1171,16 +1171,23 @@ def dashboard():
     user_id = session.get('user_id')
     if not user_id:
         return jsonify({
-            "total_lessons": 0,
-            "avg_session_length": "0 min",
+            "logged_in": False,
+            "total_time_mins": 0,
+            "avg_accuracy": 0,
             "streak_days": 0,
             "recent_lessons": [],
-            "weak_areas": [],
-            "progress_graph": []
+            "weak_topics": [],
+            "chart_data": [],
+            "recent_topics": [],
+            "concepts_learned": 0
         })
         
     stats = database.get_dashboard_stats(user_id=user_id)
     stats["recent_lessons"] = database.get_recent_lessons(user_id=user_id)
+    stats["logged_in"] = True
+    user = database.get_user_by_id(user_id)
+    if user:
+        stats["user_name"] = user.get('name', 'Solo Learner')
     return jsonify(stats)
 
 

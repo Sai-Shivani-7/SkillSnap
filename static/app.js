@@ -117,16 +117,7 @@ document.addEventListener("DOMContentLoaded", () => {
         switchView('dashboard-view');
     });
 
-    document.getElementById('logout-btn')?.addEventListener('click', () => {
-        try {
-            localStorage.removeItem('user');
-            sessionStorage.clear();
-            window.location.reload();
-        } catch (e) {
-            console.error('Logout failed', e);
-            window.location.reload();
-        }
-    });
+    // Replaced by async logout listener at the bottom
 
     document.getElementById('retry-btn')?.addEventListener('click', () => {
         setActiveNav('home-view');
@@ -1172,8 +1163,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // ==================== STUDENT DASHBOARD ====================
     async function loadDashboard() {
         try {
-            const resp = await fetch(window.API_URL + '/api/dashboard');
+            const resp = await fetch(window.API_URL + '/api/dashboard', {
+                credentials: 'include'
+            });
             const data = await resp.json();
+
+            // Check if logged in
+            if (data.logged_in === false) {
+                window.location.href = 'landing.html';
+                return;
+            }
+
+            // Update user name if available
+            if (data.user_name) {
+                document.querySelectorAll('.user-name').forEach(el => el.textContent = data.user_name);
+            }
 
             animateCounter(document.getElementById('total-time'), data.total_time_mins || 0);
             animateCounter(document.getElementById('avg-accuracy'), data.avg_accuracy || 0, '%');
@@ -1276,5 +1280,30 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
 
+
+    // Logout Button
+    document.getElementById('logout-btn')?.addEventListener('click', async () => {
+        try {
+            const resp = await fetch(window.API_URL + '/api/logout', {
+                method: 'POST',
+                credentials: 'include',
+                headers: {
+                    'X-CSRFToken': state.csrfToken
+                }
+            });
+            if (resp.ok) {
+                showToast('Logged out successfully', 'success');
+                setTimeout(() => {
+                    window.location.href = 'landing.html';
+                }, 800);
+            }
+        } catch (err) {
+            console.error('Logout failed:', err);
+            window.location.href = 'landing.html';
+        }
+    });
+
+    // Run auth check on load
+    loadDashboard();
 
 });

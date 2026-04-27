@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Success, go to main app
-            window.location.href = '/app';
+            window.location.href = 'index.html';
 
         } catch (error) {
             loginError.innerText = 'Network error. Please try again.';
@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             // Success, go to main app
-            window.location.href = '/app';
+            window.location.href = 'index.html';
 
         } catch (error) {
             registerError.innerText = 'Network error. Please try again.';
@@ -119,4 +119,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Auth Check: If already logged in, go to app
+    async function checkExistingSession() {
+        try {
+            const resp = await fetch(window.API_URL + '/api/dashboard', {
+                credentials: 'include'
+            });
+            const data = await resp.json();
+            if (data.logged_in) {
+                window.location.href = 'index.html';
+            }
+        } catch (e) {
+            console.log('No active session or server down');
+        }
+    }
+    
+    checkExistingSession();
 });
