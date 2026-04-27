@@ -375,7 +375,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 credentials: 'include',
                 body: JSON.stringify({
@@ -422,7 +423,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 credentials: 'include',
                 body: JSON.stringify({
@@ -667,7 +669,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id'),
                 },
                 body: JSON.stringify({
                     concept: state.topic,
@@ -840,7 +843,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 body: JSON.stringify({ doubt, topic: state.topic, language: state.language })
             });
@@ -916,7 +920,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 body: JSON.stringify({ text: state.lessonText, topic: state.topic })
             });
@@ -1007,7 +1012,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 body: JSON.stringify({ results, topic: state.topic })
             });
@@ -1076,7 +1082,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 body: JSON.stringify({ topic: state.topic, language: state.language })
             });
@@ -1100,7 +1107,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 credentials: 'include',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 body: JSON.stringify({
                     topic: state.topic,
@@ -1140,7 +1148,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken': state.csrfToken
+                    'X-CSRFToken': state.csrfToken,
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 },
                 credentials: 'include',
                 body: JSON.stringify({
@@ -1166,7 +1175,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const resp = await fetch(window.API_URL + '/api/dashboard', {
                 credentials: 'include',
                 headers: {
-                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 }
             });
             const data = await resp.json();
@@ -1292,7 +1300,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 credentials: 'include',
                 headers: {
                     'X-CSRFToken': state.csrfToken,
-                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id'),
                 }
             });
             localStorage.removeItem('skillsnap_user_id');
