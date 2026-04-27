@@ -22,6 +22,14 @@ def init_db():
         print("Connected to MongoDB successfully!")
     except Exception as e:
         print(f"Error connecting to MongoDB: {e}")
+        return False
+    
+    # Force creation of collections to ensure they appear in Atlas
+    for col_name in ['users', 'sessions', 'quiz_scores', 'mistakes']:
+        if col_name not in db.list_collection_names():
+            db.create_collection(col_name)
+            print(f"Created collection: {col_name}")
+    return True
 
 def get_collection(name):
     """Helper to get a collection."""
@@ -126,7 +134,12 @@ def log_session(user_id, topic, duration, explanation, session_type='lesson', pa
         "parent_topic": parent_topic,
         "timestamp": datetime.utcnow()
     }
-    sessions.insert_one(session)
+    try:
+        sessions.insert_one(session)
+        print(f"SUCCESS: Logged session for {user_id}")
+    except Exception as e:
+        print(f"CRITICAL ERROR: Failed to log session to MongoDB: {e}")
+        
     # Give them credit for the streak and learning a concept
     update_streak(user_id)
     users = get_collection('users')
