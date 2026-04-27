@@ -1319,6 +1319,15 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Run auth check on load
-    loadDashboard();
+    const skillsnapUserId = localStorage.getItem('skillsnap_user_id');
+    console.log('DEBUG: skillsnap_user_id from localStorage:', skillsnapUserId);
+    
+    // Hide dashboard content until loaded to prevent flash of 'Solo Learner'
+    const dashContent = document.querySelector('.dashboard-grid');
+    if (dashContent) dashContent.style.opacity = '0';
+    
+    loadDashboard().finally(() => {
+        if (dashContent) dashContent.style.opacity = '1';
+    });
 
 });

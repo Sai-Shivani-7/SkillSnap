@@ -56,7 +56,10 @@ database.init_db()
 
 # Helper to get user ID from session or header fallback
 def get_current_user_id():
-    return session.get('user_id') or request.headers.get('X-User-ID')
+    uid = session.get('user_id') or request.headers.get('X-User-ID')
+    if uid:
+        uid = str(uid).strip()
+    return uid
 
 # ==================== ENV VALIDATION ====================
 def validate_environment():
@@ -1183,8 +1186,8 @@ def proxy_image():
 
 @app.route('/api/dashboard', methods=['GET'])
 def dashboard():
-    # Fallback to header if session cookie is blocked (common in cross-origin Vercel -> Render)
     user_id = get_current_user_id()
+    print(f"DEBUG: Dashboard request for user_id: {user_id}")
     
     if not user_id or user_id == "undefined" or user_id == "null":
         return jsonify({
