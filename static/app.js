@@ -1175,6 +1175,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const resp = await fetch(window.API_URL + '/api/dashboard', {
                 credentials: 'include',
                 headers: {
+                    'X-User-ID': localStorage.getItem('skillsnap_user_id')
                 }
             });
             const data = await resp.json();
