@@ -107,8 +107,7 @@ def update_streak(user_id):
             "$set": {
                 "streak_days": new_streak,
                 "last_activity_date": today,
-            },
-            "$inc": {"concepts_learned": 1}
+            }
         }
     )
 
@@ -128,20 +127,40 @@ def log_session(user_id, topic, duration, explanation, session_type='lesson', pa
         "timestamp": datetime.utcnow()
     }
     sessions.insert_one(session)
-    # Give them credit for the streak/concept
+    # Give them credit for the streak and learning a concept
     update_streak(user_id)
+    users = get_collection('users')
+    try:
+        users.update_one({"_id": ObjectId(user_id)}, {"$inc": {"concepts_learned": 1}})
+    except:
+        pass
 
 def log_quiz_score(user_id, topic, score, max_score, accuracy):
     """Logs quiz score to MongoDB."""
     scores = get_collection('quiz_scores')
     scores.insert_one({
-        "user_id": str(user_id),
+        "user_id": str(user_id).strip(),
         "topic": topic,
         "score": score,
         "max_score": max_score,
         "accuracy": accuracy,
-        "timestamp": datetime.now()
+        "timestamp": datetime.utcnow()
     })
+    # Update activity streak
+    update_streak(user_id)
+    
+    # Log mistake if accuracy is low
+    if accuracy < 70:
+        log_mistake(user_id, topic, accuracy)
+
+def log_mistake(user_id, topic, accuracy):
+    """Explicitly track topics where the user struggled."""
+    mistakes = get_collection('mistakes')
+    mistakes.update_one(
+        {"user_id": str(user_id).strip(), "topic": topic},
+        {"$set": {"last_accuracy": accuracy, "timestamp": datetime.utcnow()}, "$inc": {"fail_count": 1}},
+        upsert=True
+    )
 
 def get_dashboard_stats(user_id):
     """Retrieve stats for the specific user."""
@@ -182,15 +201,18 @@ def get_dashboard_stats(user_id):
     if all_scores:
         avg_accuracy = round(sum(s['accuracy'] for s in all_scores) / len(all_scores))
         
-        # Calculate topic averages
+    # Mistakes tracking - prioritizing the explicit mistakes collection
+    mistakes_col = get_collection('mistakes')
+    weak_topics = [m["topic"] for m in mistakes_col.find({"user_id": str_uid}).sort("timestamp", -1).limit(5)]
+    
+    if not weak_topics and all_scores:
+        # Fallback to low scores logic
         topic_acc = {}
         for s in all_scores:
             t = s['topic']
-            if t not in topic_acc:
-                topic_acc[t] = []
+            if t not in topic_acc: topic_acc[t] = []
             topic_acc[t].append(s['accuracy'])
         
-        # Weak topics -> average < 70%
         for t, accs in topic_acc.items():
             if (sum(accs) / len(accs)) < 70:
                 weak_topics.append(t)
